@@ -6,7 +6,6 @@ La primera etapa de Hubris consiste en prepara el sistema operativo y el harware
 El objetivo de esta etapa es disponer de un sistema funcional y estable antes de incorporar de los componentes de red, seguridad y servicios de Hubris.
 
 ## Hardware
---- 
 
 | Componente | Especificación |
 |------------|----------------|
@@ -18,8 +17,7 @@ El objetivo de esta etapa es disponer de un sistema funcional y estable antes de
 
 El equipo fue seleccionado como servidor debido a que permite reutilizar hardware existente y dispone de recursos suficientes para ejecutar los servicios iniciales de Hubris.
 
-## Sistema operativo
---- 
+## Sistema operativo 
 
 Se eligio openSUSE Tumbleweed como base debido a su modelo rolling release y a las herramientas disponibles para la administración del sistema.
 Aunque el equipo funciona como servidor, se mantiene el entorno KDE para conservar la posibilidad de utilizar el equipo directamente cuando sea necesario.
@@ -28,7 +26,7 @@ Se puede decir que de cierto modo es un servidor hibrido mantiene las funcionali
 ## Configuración inicial
 Podremos comprobar el hostname de nuestro servidor con el comando:
 ```bash
-hostnamectl```
+hostnamectl``` 
 
 Se utiliza como shell principal zsh debido a su conveniencia y manejo de plugins y atajos, además de que es bastante modificable
 
