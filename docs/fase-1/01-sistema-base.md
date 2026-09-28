@@ -26,12 +26,14 @@ Se puede decir que de cierto modo es un servidor hibrido mantiene las funcionali
 ## Configuración inicial
 Podremos comprobar el hostname de nuestro servidor con el comando:
 ```bash
-hostnamectl``` 
+hostnamectl
+```
 
 Se utiliza como shell principal zsh debido a su conveniencia y manejo de plugins y atajos, además de que es bastante modificable
 
 ```bash
-echo $SHELL```
+echo $SHELL
+```
 
 Resultado esperado: /usr/bin/zsh
 
