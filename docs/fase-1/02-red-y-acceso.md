@@ -3,10 +3,7 @@
 Hubris utiliza tailscale como mecanismo principal para establecer conexiones remotas con el servidor. Esto permite que los dispositivos autorizados formen parte de una misma red superpuesta y puedan comunicarse con los servicios que el servidor expone dentro de la tailnet.
 
 
-
-
-
-![Diagram de la tailnet](docs/assets/Diagrama-Tailnet.png)
+![Diagram de la tailnet](../docs/assets/Diagrama-Tailnet.png)
 
 La conexión mediante Tailscale proporciona el camino de acceso hacia el servidor, pero no concede automáticamente permisos administrativos sobre el sistema. Cada servicio mantiene sus propios mecanismos de autenticación y autorización.
 
@@ -21,4 +18,17 @@ De esta forma el acceso a los servicios administrativos puede restringirse segú
 
 
 ## Acceso administrativo
-El acceso administrativo se realiza mediante SSH. Una vez autenticado, las operaciones administrativas depenen de los permisos del usuario  en el sistema.
+
+### SSH
+SHH es utilizado para administrar el servidor remotamente.
+
+El acceso puede realizarse mediante la red de Tailscale, evitando depender de una exposición directa del servidor hacia Internet.
+
+De modo que podemos hacer `ssh [IP del tailnet]`
+
+### Cockpit
+Cockpit proporciona una interfaz web para la administración del sistema.
+
+Su acceso está restringido a la red de Tailscale, por lo que no se encuentra expuesto en la interfaz de red pública.
+
+Esto permite utilizar la administración web sin publicar el puerto de Cockpit directamente en Internet.
