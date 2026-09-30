@@ -3,7 +3,7 @@
 Hubris utiliza tailscale como mecanismo principal para establecer conexiones remotas con el servidor. Esto permite que los dispositivos autorizados formen parte de una misma red superpuesta y puedan comunicarse con los servicios que el servidor expone dentro de la tailnet.
 
 
-![Diagram de la tailnet](../docs/assets/Diagrama-Tailnet.png)
+![Diagrama de la tailnet](../assets/Diagrama-Tailnet.png)
 
 La conexión mediante Tailscale proporciona el camino de acceso hacia el servidor, pero no concede automáticamente permisos administrativos sobre el sistema. Cada servicio mantiene sus propios mecanismos de autenticación y autorización.
 

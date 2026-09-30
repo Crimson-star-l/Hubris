@@ -23,9 +23,9 @@ Esta red permite la comunicación entre los contenedores que forman parte de la 
 ## Contenedores actuales
 
 |Contenedor|Imagen|Función|
-----------------------------
+|---------|-------|---------|
 |nextcloud|nextcloud:latest|Aplicación de nube local|
-nextclod-db|postgres:17|Base de datos|
+|nextcloud-db|postgres:17|Base de datos|
 
 Los contenedores se comunican mediante la red nextcloud-net.
 

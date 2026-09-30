@@ -16,9 +16,9 @@ Hubris utiliza `firewalld` para controlar las conexiones entrantes y separar el 
 Las interfaces utilizadas se encuentran distribuidas de la siguiente manera:
 
 |Zona|Interfaz|Propósito|
--------------------------
-|public|wlp2d0|Red local|
-|tailscale|tailscale0|Accesoprivado|
+|-----|------|-------------|
+|public|wlp2s0|Red local|
+|tailscale|tailscale0|Acceso privado|
 |docker|docker0|Redes de contenedores|
 
 La configuración puede consultarse con:
