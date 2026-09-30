@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+
+RED='\033[31m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+CYAN='\033[36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+DIM='\033[2m'
+
+case "$1" in
+
+    start)
+        echo "Starting Hubris..."
+        mapfile -t all_containers < <(sudo podman ps -a --format '{{.Names}}')
+        if [[ ${#all_containers[@]} -eq 0 ]]; then
+            echo "No hay contenedores para iniciar."
+        else
+            sudo podman start "${all_containers[@]}"
+        fi
+        ;;
+
+    stop)
+        echo "Stopping Hubris..."
+        mapfile -t running_containers < <(sudo podman ps --format '{{.Names}}')
+        if [[ ${#running_containers[@]} -eq 0 ]]; then
+            echo "No hay contenedores en ejecución."
+        else
+            sudo podman stop "${running_containers[@]}"
+        fi
+        ;;
+
+    status)
+        sudo -v || exit 1
+        HOST=$(hostname)
+
+        UPTIME_SECONDS=$(awk '{print int($1)}' /proc/uptime)
+        DAYS=$((UPTIME_SECONDS / 86400))
+        HOURS=$(((UPTIME_SECONDS % 86400) / 3600))
+        MINUTES=$(((UPTIME_SECONDS % 3600) / 60))
+
+        if (( DAYS > 0 )); then
+            UPTIME="${DAYS}d ${HOURS}h ${MINUTES}m"
+        elif (( HOURS > 0 )); then
+            UPTIME="${HOURS}h ${MINUTES}m"
+        else
+            UPTIME="${MINUTES}m"
+        fi
+
+        strip_ansi() {
+            sed -E 's/\x1b\[[0-9;]*m//g'
+        }
+
+        lines=()
+        lines+=("$(printf "${BOLD}  System${RESET}")")
+        lines+=("$(printf "  ${DIM}Host${RESET}       %s" "$HOST")")
+        lines+=("$(printf "  ${DIM}Uptime${RESET}     %s" "$UPTIME")")
+        lines+=("")
+        lines+=("$(printf "${BOLD}  Services${RESET}")")
+
+        while read -r unit; do
+            name="${unit%.service}"
+            name="${name%.socket}"
+            status=$(systemctl is-active "$unit")
+
+            case "$status" in
+                active) symbol="${GREEN}●${RESET}" ;;
+                *)      symbol="${RED}●${RESET}" ;;
+            esac
+
+            lines+=("$(printf "  %-12s ${symbol} %s" "$name" "$status")")
+        done < <(systemctl list-dependencies --plain hubris.target | grep -E '\.service$|\.socket$')
+
+        lines+=("")
+        lines+=("$(printf "${BOLD}  Containers${RESET}")")
+
+        containers=$(sudo podman ps -a --format '{{.Names}}|{{.Status}}|{{.Ports}}')
+
+        if [[ -z "$containers" ]]; then
+            lines+=("$(printf "  ${DIM}No containers found${RESET}")")
+        else
+            while IFS='|' read -r name status ports; do
+                if [[ "$status" == Up* ]]; then
+                    symbol="${GREEN}●${RESET}"
+                    state="${GREEN}running${RESET}"
+                else
+                    symbol="${RED}●${RESET}"
+                    state="${RED}${status}${RESET}"
+                fi
+
+                line=$(printf "  %-14s %b %-10b" "$name" "$symbol" "$state")
+                [[ -n "$ports" ]] && line+=$(printf "  ${DIM}%s${RESET}" "$ports")
+                lines+=("$line")
+            done <<< "$containers"
+        fi
+
+        # --- calcular ancho dinámico de la caja ---
+        title=" HUBRIS "
+        max_len=${#title}
+        for l in "${lines[@]}"; do
+            visible=$(printf '%s' "$l" | strip_ansi)
+            (( ${#visible} > max_len )) && max_len=${#visible}
+        done
+
+        box_width=$(( max_len + 2 ))
+        side=$(( (box_width - ${#title}) / 2 ))
+        extra=$(( (box_width - ${#title}) % 2 ))
+
+        top_border="╭$(printf '─%.0s' $(seq 1 $side))${title}$(printf '─%.0s' $(seq 1 $((side + extra))))╮"
+        bottom_border="╰$(printf '─%.0s' $(seq 1 $box_width))╯"
+
+        echo
+        printf "${RED}${BOLD}%s${RESET}\n" "$top_border"
+        echo
+        for l in "${lines[@]}"; do
+            echo -e "$l"
+        done
+        echo
+        printf "${RED}${BOLD}%s${RESET}\n" "$bottom_border"
+        echo
+        ;;
+
+       maintenance)
+        echo "Hubris maintenance"
+        echo
+        echo "System:"
+        uptime
+        echo
+        echo "Disk:"
+        df -h /
+        echo
+
+        echo "== Imágenes de contenedores =="
+        images=$(sudo podman ps -a --format '{{.Image}}' | sort -u)
+        if [[ -z "$images" ]]; then
+            echo "  No hay imágenes para actualizar."
+        else
+            while read -r img; do
+                echo "  Actualizando $img..."
+                sudo podman pull "$img"
+            done <<< "$images"
+        fi
+        echo
+        echo "  Aplicando auto-update a contenedores marcados..."
+        sudo podman auto-update
+
+        echo
+        echo "== Limpieza de podman =="
+        sudo podman system prune -f
+        sudo podman volume prune -f
+
+        echo
+        echo "== Limpieza de zypper =="
+        sudo zypper --non-interactive clean --all
+
+        orphaned=$(sudo zypper --quiet packages --orphaned 2>/dev/null | awk -F'|' 'NR>2 {gsub(/^[ \t]+|[ \t]+$/,"",$2); if ($2!="") print $2}')
+        if [[ -n "$orphaned" ]]; then
+            echo "  Paquetes huérfanos encontrados:"
+            echo "$orphaned" | sed 's/^/    - /'
+            sudo zypper --non-interactive remove --clean-deps $orphaned
+        else
+            echo "  No hay paquetes huérfanos."
+        fi
+
+        echo
+        echo "== Limpieza de flatpak =="
+        if command -v flatpak &>/dev/null; then
+            sudo flatpak uninstall --unused -y
+        else
+            echo "  flatpak no está instalado, se omite."
+        fi
+
+        echo
+        echo "Containers:"
+        sudo podman ps -a
+        ;; 
+
+    help|"")
+        echo "Hubris CLI"
+        echo
+        echo "Uso:"
+        echo "  hubris <comando>"
+        echo
+        echo "Comandos:"
+        echo "  start        Iniciar contenedores"
+        echo "  stop         Detener contenedores"
+        echo "  status       Ver estado"
+        echo "  maintenance  Ver estado del sistema"
+        echo "  help         Mostrar esta ayuda"
+        ;;
+
+    *)
+        echo "Hubris: comando desconocido: $1"
+        echo "Usa 'hubris help' para ver los comandos disponibles."
+        exit 1
+        ;;
+
+esac
